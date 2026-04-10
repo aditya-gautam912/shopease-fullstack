@@ -9,6 +9,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const path = require('path');
+const dns = require('dns');
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -16,6 +17,10 @@ const User = require('../src/models/User');
 const Product = require('../src/models/Product');
 const Coupon = require('../src/models/Coupon');
 const { COUPONS, PRODUCTS, USERS } = require('./seed');
+
+if (process.env.DNS_SERVERS) {
+  dns.setServers(process.env.DNS_SERVERS.split(',').map((server) => server.trim()).filter(Boolean));
+}
 
 const seedSafe = async () => {
   try {
@@ -36,10 +41,10 @@ const seedSafe = async () => {
       console.log('Created admin user');
     }
 
-    const productCount = await Product.countDocuments();
+    const activeProductCount = await Product.countDocuments({ isActive: true });
 
-    if (productCount > 0) {
-      console.log(`Products already exist (${productCount}); skipping product seed`);
+    if (activeProductCount > 0) {
+      console.log(`Active products already exist (${activeProductCount}); skipping product seed`);
     } else {
       const createdProducts = await Product.create(PRODUCTS);
       console.log(`Created ${createdProducts.length} products`);
