@@ -620,6 +620,13 @@ const PRODUCTS = [
   },
 ];
 
+const COUPONS = [
+  { code: 'SAVE10', type: 'percentage', discount: 0.10, description: '10% off your order', isActive: true },
+  { code: 'SAVE20', type: 'percentage', discount: 0.20, description: '20% off your order', isActive: true },
+  { code: 'SHOPEASE', type: 'percentage', discount: 0.15, description: '15% off — ShopEase special', isActive: true },
+  { code: 'FLAT500', type: 'fixed', discount: 500, description: '₹500 off on orders above ₹2000', minOrderValue: 2000, isActive: true },
+];
+
 // ─────────────────────────────────────────────────────────
 // SEED FUNCTION
 // ─────────────────────────────────────────────────────────
@@ -652,12 +659,7 @@ const seed = async () => {
 
     // ── Seed default coupons ────────────────────────────
     console.log('🎟️  Seeding coupons...');
-    await Coupon.create([
-      { code: 'SAVE10',   type: 'percentage', discount: 0.10, description: '10% off your order', isActive: true },
-      { code: 'SAVE20',   type: 'percentage', discount: 0.20, description: '20% off your order', isActive: true },
-      { code: 'SHOPEASE', type: 'percentage', discount: 0.15, description: '15% off — ShopEase special', isActive: true },
-      { code: 'FLAT500',  type: 'fixed',      discount: 500,  description: '₹500 off on orders above ₹2000', minOrderValue: 2000, isActive: true },
-    ]);
+    await Coupon.create(COUPONS);
     console.log('✅  Created 4 coupons');
 
     // ── Summary ──────────────────────────────────────────
@@ -683,4 +685,12 @@ const seed = async () => {
   }
 };
 
-seed();
+if (require.main === module) {
+  seed();
+}
+
+module.exports = {
+  COUPONS,
+  PRODUCTS,
+  USERS,
+};

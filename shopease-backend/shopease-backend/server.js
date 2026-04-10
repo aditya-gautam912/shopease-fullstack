@@ -32,6 +32,21 @@ connectDB();
 
 const app = express();
 
+// Allow local web, LAN mobile, and Capacitor origins during development.
+// CLIENT_URL can be a comma-separated list for deployed environments.
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const defaultDevOrigins = [
+  'http://localhost:5173',
+  'http://localhost',
+  'capacitor://localhost',
+];
+
+const corsOrigins = new Set([...allowedOrigins, ...defaultDevOrigins]);
+
 // ── Trust proxy (for rate limiting behind reverse proxy) ───
 // Enable if behind a load balancer or nginx
 app.set('trust proxy', 1);
@@ -52,7 +67,12 @@ app.use('/api', apiAbuseLimiter);
 
 // ── Global Middleware ──────────────────────────────────────
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    if (!origin || corsOrigins.has(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked origin: ${origin}`));
+  },
   credentials: true, // Required for CSRF cookies
 }));
 app.use(express.json({ limit: '10kb' })); // Limit body size to prevent DoS
