@@ -17,6 +17,13 @@ import axios from 'axios';
 
 // ── Store reference (injected after store is created) ──────
 let _store = null;
+const isNativeApp = () => {
+  try {
+    return !!window.Capacitor?.isNativePlatform?.();
+  } catch {
+    return false;
+  }
+};
 
 /**
  * Call this once from store.js immediately after configureStore().
@@ -73,6 +80,10 @@ api.interceptors.request.use(
     const token = _store?.getState().auth.token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (isNativeApp()) {
+      config.headers['X-ShopEase-Client'] = 'capacitor';
     }
 
     const method = config.method?.toUpperCase();

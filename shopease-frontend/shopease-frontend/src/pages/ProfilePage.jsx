@@ -8,9 +8,8 @@ import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { selectCurrentUser, updateUser } from '../redux/slices/authSlice';
 import { userService } from '../services/index';
-import { authService } from '../services/authService';
 import { getInitials } from '../utils/helpers';
-import { FiEye, FiEyeOff, FiLock, FiCheck, FiPlus, FiTrash2, FiMapPin, FiStar, FiX, FiMail, FiAlertCircle } from 'react-icons/fi';
+import { FiEye, FiEyeOff, FiLock, FiCheck, FiPlus, FiTrash2, FiMapPin, FiStar, FiX } from 'react-icons/fi';
 
 const TABS = ['Profile', 'Addresses', 'Security'];
 
@@ -18,7 +17,6 @@ export default function ProfilePage() {
   const dispatch = useDispatch();
   const user     = useSelector(selectCurrentUser);
   const [tab, setTab] = useState('Profile');
-  const [resending, setResending] = useState(false);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     mode: 'onSubmit', reValidateMode: 'onChange',
@@ -35,56 +33,8 @@ export default function ProfilePage() {
     }
   };
 
-  const onResendVerification = async () => {
-    setResending(true);
-    try {
-      const result = await authService.resendVerification();
-      toast.success(result.message || 'Verification email sent!');
-    } catch (err) {
-      toast.error(err.message || 'Failed to send verification email');
-    } finally {
-      setResending(false);
-    }
-  };
-
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
-      {/* Email Verification Banner */}
-      {user && !user.isEmailVerified && (
-        <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-full flex-shrink-0">
-              <FiAlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <div>
-              <p className="font-semibold text-yellow-800 dark:text-yellow-200 text-sm sm:text-base">
-                Verify your email address
-              </p>
-              <p className="text-yellow-700 dark:text-yellow-300 text-xs sm:text-sm">
-                Please check your inbox and click the verification link.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onResendVerification}
-            disabled={resending}
-            className="flex items-center gap-2 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
-          >
-            {resending ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <FiMail size={16} />
-                Resend Email
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
       <div className="flex items-center gap-4 sm:gap-5 mb-6 sm:mb-8">
         <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white text-lg sm:text-xl font-extrabold flex-shrink-0">
           {getInitials(user?.name)}
@@ -92,22 +42,16 @@ export default function ProfilePage() {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white truncate">{user?.name}</h1>
-            {user?.isEmailVerified && (
-              <span className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full" title="Email verified">
-                <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-              </span>
-            )}
+            <span className="p-1 bg-green-100 dark:bg-green-900/30 rounded-full" title="User verified">
+              <FiCheck className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
+            </span>
           </div>
           <p className="text-gray-400 text-xs sm:text-sm truncate">{user?.email}</p>
           <div className="flex items-center gap-2 mt-1">
             {user?.role === 'admin' && (
               <span className="text-[10px] sm:text-xs bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-bold px-2 py-0.5 rounded-full">Admin</span>
             )}
-            {user?.isEmailVerified ? (
-              <span className="text-[10px] sm:text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold px-2 py-0.5 rounded-full">Verified</span>
-            ) : (
-              <span className="text-[10px] sm:text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 font-bold px-2 py-0.5 rounded-full">Unverified</span>
-            )}
+            <span className="text-[10px] sm:text-xs bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 font-bold px-2 py-0.5 rounded-full">Verified</span>
           </div>
         </div>
       </div>

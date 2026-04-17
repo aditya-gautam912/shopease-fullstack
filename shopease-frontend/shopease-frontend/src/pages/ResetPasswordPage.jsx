@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { setCredentials } from '../redux/slices/authSlice';
+import { clearCart } from '../redux/slices/cartSlice';
 
 const ResetPasswordPage = () => {
   const { token } = useParams();
@@ -33,6 +34,7 @@ const ResetPasswordPage = () => {
           refreshToken: response.data.refreshToken,
           user: response.data.user,
         }));
+        dispatch(clearCart());
         toast.success('Password reset successful! You are now logged in.');
         navigate('/');
       } else {

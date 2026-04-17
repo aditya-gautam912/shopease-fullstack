@@ -17,7 +17,6 @@ import PageSpinner        from './components/common/PageSpinner';
 import { cartService } from './services/index';
 import { setCart, selectCartItems } from './redux/slices/cartSlice';
 import { useSelector as useSel } from 'react-redux';
-import { store } from './redux/store';
 import { fetchCsrfToken } from './services/api';
 
 // ── Lazy-loaded pages (code splitting) ────────────────────
@@ -137,7 +136,7 @@ function InstallPrompt() {
 
 // ── CartSync ───────────────────────────────────────────────
 // Invisible component that keeps the server cart in sync.
-//  - On login:  fetch server cart, merge with local, push merged back
+//  - On login: fetch server cart and replace local cart for the signed-in user
 //  - On change: debounced push to server (500ms)
 //  - On logout: cart is cleared by authSlice already
 function CartSync() {
@@ -146,8 +145,10 @@ function CartSync() {
   const items      = useSel(selectCartItems);
   const prevToken  = useRef(null);
   const syncTimer  = useRef(null);
+  const hydratingCart = useRef(false);
 
-  // On login — fetch server cart and merge with whatever is in localStorage
+  // On login — replace the local cart with the signed-in user's server cart.
+  // Do not merge here; otherwise an admin/user can inherit another user's local cart.
   useEffect(() => {
     const wasLoggedOut = !prevToken.current;
     const nowLoggedIn  = isLoggedIn;
@@ -156,41 +157,14 @@ function CartSync() {
     if (!nowLoggedIn || !wasLoggedOut) return;
 
     (async () => {
+      hydratingCart.current = true;
       try {
         const serverItems = await cartService.getCart();
-        // Get latest local items directly from store to avoid stale closure
-        const { cart } = store.getState();
-        const localItems = cart.items;
-
-        if (serverItems.length === 0 && localItems.length === 0) return;
-
-        if (localItems.length === 0) {
-          // No local cart — just use server cart
-          dispatch(setCart(serverItems));
-          return;
-        }
-
-        if (serverItems.length === 0) {
-          // No server cart — push local cart to server
-          await cartService.syncCart(localItems);
-          return;
-        }
-
-        // Both exist — merge: prefer higher qty, keep all unique items
-        const merged = [...localItems];
-        serverItems.forEach((serverItem) => {
-          const existing = merged.find((i) => i._id === serverItem._id);
-          if (existing) {
-            existing.qty = Math.max(existing.qty, serverItem.qty);
-          } else {
-            merged.push(serverItem);
-          }
-        });
-
-        dispatch(setCart(merged));
-        await cartService.syncCart(merged);
+        dispatch(setCart(serverItems));
       } catch {
         // Silently ignore — cart sync failure should never break the app
+      } finally {
+        hydratingCart.current = false;
       }
     })();
   }, [isLoggedIn, dispatch]);
@@ -198,6 +172,7 @@ function CartSync() {
   // On every cart change (when logged in) — debounced sync to server
   useEffect(() => {
     if (!isLoggedIn) return;
+    if (hydratingCart.current) return;
     clearTimeout(syncTimer.current);
     syncTimer.current = setTimeout(() => {
       cartService.syncCart(items).catch(() => {});

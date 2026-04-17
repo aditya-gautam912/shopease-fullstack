@@ -130,9 +130,10 @@ export default function CheckoutPage() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const user      = useSelector(selectCurrentUser);
-  const items     = useSelector(selectCartItems);
+  const items     = useSelector(selectCartItems) || [];
 
-  const { discount = 0, shipping = 849, total = 0, coupon = null } = location.state || {};
+  const checkoutState = location.state || {};
+  const { discount = 0, shipping = 849, total = 0, coupon = null } = checkoutState;
 
   const [step,      setStep]      = useState(1);
   const [payMethod, setPayMethod] = useState('upi');
@@ -141,12 +142,34 @@ export default function CheckoutPage() {
   const [savedAddr, setSavedAddr] = useState(null);
   const [isGuest,   setIsGuest]   = useState(!user);
   const [guestInfo, setGuestInfo] = useState({ email: '', name: '', phone: '' });
+  const [useDefaultAddress, setUseDefaultAddress] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
     mode: 'onSubmit', reValidateMode: 'onChange',
   });
 
-  const onAddressSubmit = (data) => { setSavedAddr(data); setStep(2); };
+  const defaultAddress = user?.addresses?.find((address) => address.isDefault);
+
+  const fillDefaultAddress = () => {
+    if (!defaultAddress) return;
+
+    setUseDefaultAddress(true);
+    setValue('street', defaultAddress.street || '', { shouldValidate: true, shouldDirty: true });
+    setValue('city', defaultAddress.city || '', { shouldValidate: true, shouldDirty: true });
+    setValue('state', defaultAddress.state || '', { shouldValidate: true, shouldDirty: true });
+    setValue('zip', defaultAddress.zip || '', { shouldValidate: true, shouldDirty: true });
+  };
+
+  const onAddressSubmit = (data) => {
+    setSavedAddr({
+      street: data.street || '',
+      city: data.city || '',
+      state: data.state || '',
+      zip: data.zip || '',
+      country: data.country || defaultAddress?.country || 'US',
+    });
+    setStep(2);
+  };
 
   // ── COD — place order directly, no gateway ────────────────
   const placeCOD = async () => {
@@ -446,6 +469,29 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {!isGuest && defaultAddress && (
+            <button
+              type="button"
+              onClick={fillDefaultAddress}
+              className={`block w-full text-left p-3 sm:p-4 mb-4 rounded-xl border-2 transition-all ${
+                useDefaultAddress
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span className={`mt-1 w-4 h-4 rounded border flex-shrink-0 ${useDefaultAddress ? 'bg-primary-500 border-primary-500' : 'border-gray-400 dark:border-gray-500'}`} />
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">Use default address</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 break-words">
+                    {defaultAddress.street}, {defaultAddress.city}
+                    {defaultAddress.state ? `, ${defaultAddress.state}` : ''} - {defaultAddress.zip}
+                  </p>
+                </div>
+              </div>
+            </button>
+          )}
+
           <form onSubmit={handleSubmit(onAddressSubmit)} noValidate className="space-y-3 sm:space-y-4">
             {[
               { name: 'street', label: 'Street / Area *',  placeholder: '123, MG Road, Koramangala', required: true  },
@@ -467,6 +513,7 @@ export default function CheckoutPage() {
                 )}
               </div>
             ))}
+            <input type="hidden" value={defaultAddress?.country || 'US'} {...register('country')} />
             <button 
               type="submit" 
               className="btn-primary w-full py-3 justify-center mt-2 touch-manipulation"

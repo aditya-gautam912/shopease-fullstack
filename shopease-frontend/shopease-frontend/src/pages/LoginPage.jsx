@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 import { setCredentials } from '../redux/slices/authSlice';
+import { clearCart }      from '../redux/slices/cartSlice';
 import { authService }    from '../services/authService';
 
 export default function LoginPage() {
@@ -26,6 +27,7 @@ export default function LoginPage() {
     try {
       const result = await authService.login(data);
       dispatch(setCredentials(result));
+      dispatch(clearCart());
       toast.success(`Welcome back, ${result.user.name}!`);
       navigate('/');
     } catch (err) {

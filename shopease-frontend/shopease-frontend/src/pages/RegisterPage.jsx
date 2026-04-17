@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 import { setCredentials } from '../redux/slices/authSlice';
+import { clearCart }      from '../redux/slices/cartSlice';
 import { authService }    from '../services/authService';
 
 // Field must be defined outside the component so it is never
@@ -50,6 +51,7 @@ export default function RegisterPage() {
         password: data.password,
       });
       dispatch(setCredentials(result));
+      dispatch(clearCart());
       toast.success(`Welcome, ${result.user.name}! Account created.`);
       navigate('/');
     } catch (err) {

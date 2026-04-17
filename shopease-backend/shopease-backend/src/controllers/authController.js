@@ -9,7 +9,7 @@ const { generateTokens } = require('../utils/generateToken');
 const asyncHandler  = require('../utils/asyncHandler');
 const crypto        = require('crypto');
 const jwt           = require('jsonwebtoken');
-const { sendPasswordReset, sendWelcomeEmail, sendVerificationEmail } = require('../services/emailService');
+const { sendPasswordReset, sendWelcomeEmail } = require('../services/emailService');
 
 // ── Helper: strip sensitive fields from user doc ───────────
 const sanitiseUser = (user) => ({
@@ -17,7 +17,7 @@ const sanitiseUser = (user) => ({
   name:            user.name,
   email:           user.email,
   role:            user.role,
-  isEmailVerified: user.isEmailVerified,
+  isEmailVerified: true,
   addresses:       user.addresses,
   wishlist:        user.wishlist,
   createdAt:       user.createdAt,
@@ -55,16 +55,11 @@ const register = asyncHandler(async (req, res) => {
     });
   }
 
-  // Generate email verification token
-  const verificationToken = crypto.randomBytes(32).toString('hex');
-  const hashedVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
-
   const user = await User.create({ 
     name, 
     email, 
     password,
-    emailVerificationToken: hashedVerificationToken,
-    emailVerificationExpire: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+    isEmailVerified: true,
   });
   
   const { accessToken, refreshToken } = generateTokens(user);
@@ -72,9 +67,9 @@ const register = asyncHandler(async (req, res) => {
   // Save refresh token
   await saveRefreshToken(user, refreshToken);
 
-  // Send verification email (non-blocking)
-  sendVerificationEmail(user, verificationToken).catch((err) => 
-    console.error('Failed to send verification email:', err)
+  // Send welcome email (non-blocking)
+  sendWelcomeEmail(user).catch((err) =>
+    console.error('Failed to send welcome email:', err)
   );
 
   res.status(201).json({
@@ -84,7 +79,7 @@ const register = asyncHandler(async (req, res) => {
       refreshToken,
       user: sanitiseUser(user),
     },
-    message: 'Registration successful! Please check your email to verify your account.',
+    message: 'Registration successful!',
   });
 });
 
@@ -100,6 +95,10 @@ const login = asyncHandler(async (req, res) => {
       success: false,
       message: 'Invalid email or password',
     });
+  }
+
+  if (!user.isEmailVerified) {
+    user.isEmailVerified = true;
   }
 
   const { accessToken, refreshToken } = generateTokens(user);

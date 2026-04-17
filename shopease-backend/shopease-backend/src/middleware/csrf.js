@@ -81,6 +81,12 @@ const skipCsrfRoutes = [
 ];
 
 const conditionalCsrf = (req, res, next) => {
+  // Native Android/iOS app requests are not vulnerable to browser CSRF in the same way.
+  // They authenticate explicitly via app-controlled requests, not ambient browser cookies.
+  if (req.headers['x-shopease-client'] === 'capacitor') {
+    return next();
+  }
+
   // Skip CSRF check for certain routes (like webhooks from payment gateways)
   if (skipCsrfRoutes.some(route => req.path.startsWith(route))) {
     return next();

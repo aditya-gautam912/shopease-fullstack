@@ -146,6 +146,30 @@ export default function AdminUsers() {
     if (addErrors[k]) setAddErrors((prev) => ({ ...prev, [k]: undefined }));
   };
 
+  const renderDefaultAddress = (user) => {
+    const defaultAddress = user.addresses?.find((address) => address.isDefault);
+
+    if (!defaultAddress) {
+      return (
+        <span className="text-xs text-gray-400">
+          {user.addresses?.length ? 'No default set' : 'No addresses'}
+        </span>
+      );
+    }
+
+    return (
+      <div className="max-w-xs">
+        <span className="inline-flex text-[10px] font-bold bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full mb-1">
+          Default
+        </span>
+        <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+          {defaultAddress.street}, {defaultAddress.city}
+          {defaultAddress.state ? `, ${defaultAddress.state}` : ''} - {defaultAddress.zip}
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div>
       {/* Header */}
@@ -177,7 +201,7 @@ export default function AdminUsers() {
                     <th className="px-5 py-3 font-semibold">Email</th>
                     <th className="px-5 py-3 font-semibold">Role</th>
                     <th className="px-5 py-3 font-semibold">Joined</th>
-                    <th className="px-5 py-3 font-semibold">Addresses</th>
+                    <th className="px-5 py-3 font-semibold">Default Address</th>
                     <th className="px-5 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -231,8 +255,8 @@ export default function AdminUsers() {
                         {user.createdAt ? fmtDate(user.createdAt) : '—'}
                       </td>
 
-                      {/* Addresses */}
-                      <td className="px-5 py-3 text-gray-500">{user.addresses?.length ?? 0}</td>
+                      {/* Default Address */}
+                      <td className="px-5 py-3 text-gray-500">{renderDefaultAddress(user)}</td>
 
                       {/* Actions */}
                       <td className="px-5 py-3">
@@ -286,7 +310,7 @@ export default function AdminUsers() {
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{user.email}</p>
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-[10px] text-gray-400">
-                        Joined {user.createdAt ? fmtDate(user.createdAt) : '—'} · {user.addresses?.length ?? 0} addresses
+                        Joined {user.createdAt ? fmtDate(user.createdAt) : '—'}
                       </p>
                       {user._id !== currentUser?._id && (
                         <button
@@ -296,6 +320,7 @@ export default function AdminUsers() {
                         </button>
                       )}
                     </div>
+                    <div className="mt-3">{renderDefaultAddress(user)}</div>
                   </div>
                 </div>
               </div>

@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { logout, selectCurrentUser, selectIsLoggedIn, selectIsAdmin, selectRefreshToken } from '../../redux/slices/authSlice';
-import { selectCartCount } from '../../redux/slices/cartSlice';
+import { clearCart, selectCartCount } from '../../redux/slices/cartSlice';
 import { toggleDarkMode, selectDarkMode, setMobileMenu, selectMobileMenuOpen } from '../../redux/slices/uiSlice';
 import { fetchWishlist, selectWishlistCount } from '../../redux/slices/wishlistSlice';
 import { useDebounce, useClickOutside } from '../../hooks';
@@ -80,6 +80,7 @@ export default function Navbar() {
     // Invalidate refresh token on server
     await authService.logout(refreshToken);
     dispatch(logout());
+    dispatch(clearCart());
     navigate('/');
   };
 
