@@ -29,7 +29,7 @@ export default function OrdersPage() {
     try {
       await orderService.downloadInvoice(orderId);
       toast.success('Invoice downloaded!');
-    } catch (err) {
+    } catch {
       toast.error('Failed to download invoice');
     } finally {
       setDownloading(null);
